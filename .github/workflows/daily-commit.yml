@@ -2,8 +2,11 @@ name: Daily Commit
 
 on:
   schedule:
-    - cron: "0 6 * * *" # Runs at 6:00 AM UTC every day
-  workflow_dispatch: # Allows manual trigger
+    - cron: "0 6 * * *" # 6:00 AM UTC every day
+  workflow_dispatch:
+
+permissions:
+  contents: write # ← This is the important fix
 
 jobs:
   commit:
@@ -12,13 +15,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Make daily change
         run: |
           echo "Daily commit: $(date -u)" >> daily-log.txt
-          echo "Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" > LAST_COMMIT.md
+          echo "# Daily Auto Commit" > LAST_COMMIT.md
+          echo "Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> LAST_COMMIT.md
 
       - name: Commit and push
         run: |
@@ -28,8 +30,9 @@ jobs:
           git add daily-log.txt LAST_COMMIT.md
 
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "No changes to commit today"
           else
             git commit -m "Daily auto commit - $(date -u +'%Y-%m-%d')"
             git push
+            echo "Successfully committed and pushed"
           fi
